@@ -250,31 +250,37 @@
     }
 
     function filterTodayData() {
-        const today = new Date();
-        
-        // String tanggal hari ini dengan format YYYY-MM-DD
-        const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-        
-        console.log(`🔎 Memfilter data untuk tanggal hari ini: ${today.toLocaleDateString()}`);
+    const today = new Date();
+    
+    // KOREKSI UTAMA: Tambah 1 ke getMonth() dan gunakan padStart untuk padding
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    console.log(`🔎 Memfilter data untuk tanggal hari ini: ${todayKey}`);
 
-        todayData = rawData.filter(row => {
-            if (!row.WAKTU) return false;
-            
-            // Menggunakan parser khusus
-            const rowDateObj = parseDDMMYYYYHHMMSS(row.WAKTU);
-            
-            if (!rowDateObj) {
-                // Log baris yang gagal di parse
-                console.warn(`⚠️ Gagal membaca WAKTU, melewatkan baris:`, row.WAKTU);
-                return false;
-            }
+    todayData = rawData.filter(row => {
+        if (!row.WAKTU) return false;
+        
+        const rowDateObj = parseDDMMYYYYHHMMSS(row.WAKTU);
+        
+        if (!rowDateObj) {
+            console.warn(`⚠️ Gagal membaca WAKTU, melewatkan baris:`, row.WAKTU);
+            return false;
+        }
 
-            // String tanggal dari data row untuk perbandingan
-            const rowDateKey = `${rowDateObj.getFullYear()}-${rowDateObj.getMonth()}-${rowDateObj.getDate()}`;
-            
-            // Ini adalah perbandingan utamanya
-            return rowDateKey === todayKey;
-        });
+        // KOREKSI UTAMA: Lakukan hal yang sama untuk data dari Sheet
+        const rowDateKey = `${rowDateObj.getFullYear()}-${String(rowDateObj.getMonth() + 1).padStart(2, '0')}-${String(rowDateObj.getDate()).padStart(2, '0')}`;
+        
+        // Log ini akan menunjukkan hasil perbandingan yang akurat
+        console.log(`Cek Baris: Sheet=${rowDateKey} vs HariIni=${todayKey}`);
+
+        return rowDateKey === todayKey;
+    });
+
+    console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
+    if(todayData.length === 0) {
+        console.warn(`⚠️ Coba ganti filter Shift ke "Semua Jam". Jika tetap 0, data di Sheet mungkin belum hari ini.`);
+    }
+}
 
         console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
         if(todayData.length === 0) {
@@ -377,4 +383,5 @@
 
 </body>
 </html>
+
 
