@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard Transaksi Harian</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -23,18 +24,30 @@
             padding: 20px;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-        header { margin-bottom: 25px; text-align: center; }
-        header h1 { margin-bottom: 5px; color: var(--primary); }
-        header .date-display { font-weight: 600; color: #64748b; }
+        header {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        header h1 {
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+        header .date-display {
+            font-weight: 600;
+            color: #64748b;
+        }
 
         /* Control Panel */
         .controls {
             background: var(--card);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
@@ -43,20 +56,34 @@
             border-left: 5px solid var(--primary);
         }
 
-        .form-group { display: flex; flex-direction: column; flex: 1; min-width: 200px; }
-        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #64748b; }
-        
-        select, input { 
-            padding: 12px; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 8px; 
-            font-size: 1rem; 
-            width: 100%; 
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #64748b;
+        }
+
+        select,
+        input {
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
             box-sizing: border-box;
             font-family: inherit;
         }
 
-        input[type="number"] { font-weight: bold; color: var(--primary); }
+        input[type='number'] {
+            font-weight: bold;
+            color: var(--primary);
+        }
 
         /* Stats Grid */
         .stats-grid {
@@ -70,332 +97,407 @@
             background: var(--card);
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-        
-        .card h3 { margin: 0; font-size: 0.9rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px;}
-        .card p { margin: 10px 0 0 0; font-size: 2rem; font-weight: 700; color: var(--text); }
-        .card.main-balance p { color: var(--primary); }
-        
+
+        .card h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .card p {
+            margin: 10px 0 0 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .card.main-balance p {
+            color: var(--primary);
+        }
+
         .detail-stats {
             display: flex;
             justify-content: space-between;
             margin-top: 10px;
             font-size: 0.9rem;
         }
-        .inc { color: var(--success); }
-        .out { color: var(--danger); }
+        .inc {
+            color: var(--success);
+        }
+        .out {
+            color: var(--danger);
+        }
 
         /* Table */
         .table-wrapper {
             background: var(--card);
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             overflow-x: auto;
         }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #f8fafc; font-weight: 600; color: #475569; }
-        tr:hover { background-color: #f8fafc; }
-        
-        /* Tag Styles */
-        .tag { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .tag-in { background-color: #d1fae5; color: #065f46; } /* Hijau */
-        .tag-out { background-color: #fee2e2; color: #991b1b; } /* Merah */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+        tr:hover {
+            background-color: #f8fafc;
+        }
 
-        #loading { text-align: center; margin-top: 50px; color: #64748b; }
+        /* Tag Styles */
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .tag-in {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        /* Hijau */
+        .tag-out {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        /* Merah */
+
+        #loading {
+            text-align: center;
+            margin-top: 50px;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>Dashboard Kasir</h1>
+            <div class="date-display" id="currentDateDisplay">Hari ini: -</div>
+        </header>
 
-<div class="container">
-    <header>
-        <h1>Dashboard Kasir</h1>
-        <div class="date-display" id="currentDateDisplay">Hari ini: -</div>
-    </header>
-
-    <div class="controls">
-        <div class="form-group">
-            <label for="inputModal">💰 Input Modal Awal (Rp)</label>
-            <input type="number" id="inputModal" placeholder="0" oninput="applyCalculation()" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="filterShift">🕒 Pilih Shift</label>
-            <select id="filterShift" onchange="applyCalculation()">
-                <option value="All">Semua Jam (Hari Ini)</option>
-                <option value="Pagi">Pagi (06:00 - 12:00)</option>
-                <option value="Siang">Siang (12:10 - 18:00)</option>
-                <option value="Malam">Malam (19:00 - 22:00)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="filterTeller">👤 Filter Petugas</label>
-            <select id="filterTeller" onchange="applyCalculation()">
-                <option value="All">Semua Petugas</option>
-            </select>
-        </div>
-    </div>
-
-    <div id="loading">Mengambil data transaksi hari ini...</div>
-
-    <div id="dashboardContent" style="display:none;">
-        <div class="stats-grid">
-            <div class="card main-balance">
-                <h3>Sisa Saldo Akhir</h3>
-                <p id="finalBalance">Rp 0</p>
-                <small style="color: #64748b">Modal + (TopUp - Tarik Tunai)</small>
+        <div class="controls">
+            <div class="form-group">
+                <label for="inputModal">💰 Input Modal Awal (Rp)</label>
+                <input type="number" id="inputModal" placeholder="0" oninput="applyCalculation()" value="0" />
             </div>
-            
-            <div class="card">
-                <h3>Mutasi Transaksi</h3>
-                <div class="detail-stats">
-                    <span class="inc">Masuk: <br><b id="totalIn">Rp 0</b></span>
-                    <span class="out">Keluar: <br><b id="totalOut">Rp 0</b></span>
+
+            <div class="form-group">
+                <label for="filterShift">🕒 Pilih Shift</label>
+                <select id="filterShift" onchange="applyCalculation()">
+                    <option value="All">Semua Jam (Hari Ini)</option>
+                    <option value="Pagi">Pagi (06:00 - 12:00)</option>
+                    <option value="Siang">Siang (12:10 - 18:00)</option>
+                    <option value="Malam">Malam (19:00 - 22:00)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filterTeller">👤 Filter Petugas</label>
+                <select id="filterTeller" onchange="applyCalculation()">
+                    <option value="All">Semua Petugas</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loading">Mengambil data transaksi hari ini...</div>
+
+        <div id="dashboardContent" style="display:none;">
+            <div class="stats-grid">
+                <div class="card main-balance">
+                    <h3>Sisa Saldo Akhir</h3>
+                    <p id="finalBalance">Rp 0</p>
+                    <small style="color: #64748b">Modal + (TopUp - Tarik Tunai)</small>
+                </div>
+
+                <div class="card">
+                    <h3>Mutasi Transaksi</h3>
+                    <div class="detail-stats">
+                        <span class="inc">Masuk: <br /><b id="totalIn">Rp 0</b></span>
+                        <span class="out">Keluar: <br /><b id="totalOut">Rp 0</b></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Jumlah Transaksi</h3>
+                    <p id="totalCount">0</p>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>Jumlah Transaksi</h3>
-                <p id="totalCount">0</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Jam</th>
+                            <th>Petugas</th>
+                            <th>Tipe Transaksi</th>
+                            <th>Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
             </div>
         </div>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Jam</th>
-                        <th>Petugas</th>
-                        <th>Tipe Transaksi</th>
-                        <th>Nominal</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
     </div>
-</div>
+    <script>
+        // =================================================================
+        // PASTIKAN LINK INI BENAR
+        const SHEET_URL =
+            "https://docs.google.com/spreadsheets/d/e/2PACX-1vSGyZmd8oN7ZX__52lX-xQVI1u8MXqNpaEbVWtjVBUUc1E9mK4sl-AQ_4jtaf-qxdhrjP-HmW8ao2li/pub?output=csv"; // <- add output=csv for proper CSV download
+        // =================================================================
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script>
-    // =================================================================
-    // PASTIKAN LINK INI BENAR
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSGyZmd8oN7ZX__52lX-xQVI1u8MXqNpaEbVWtjVBUUc1E9mK4sl-AQ_4jtaf-qxdhrjP-HmW8ao2li/pubhtml'; 
-    // =================================================================
+        let rawData = [];
+        let todayData = [];
 
-    let rawData = [];
-    let todayData = []; 
+        window.onload = function () {
+            // Tampilkan tanggal hari ini di UI
+            const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+            document.getElementById("currentDateDisplay").innerText = new Date().toLocaleDateString("id-ID", options);
 
-    window.onload = function() {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('id-ID', options);
-        
-        console.log("Memulai proses ambil data...");
-        fetchData();
-    };
+            console.log("Memulai proses ambil data...");
+            fetchData();
+        };
 
-    function fetchData() {
-        Papa.parse(SHEET_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                console.log("✅ Data berhasil ditarik dari Google Sheet!");
-                rawData = results.data;
-                
-                filterTodayData(); 
-                populateTellers();
+        function fetchData() {
+            Papa.parse(SHEET_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function (results) {
+                    console.log("✅ Data berhasil ditarik dari Google Sheet!");
+                    console.log("Contoh data baris pertama:", results.data[0]);
 
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('dashboardContent').style.display = 'block';
-                
-                applyCalculation();
-            },
-            error: function(err) {
-                alert("❌ Gagal mengambil data. Cek Link CSV atau Koneksi Internet.");
-                console.error(err);
-            }
-        });
-    }
+                    rawData = results.data;
 
-    // FUNGSI BARU: KHUSUS UNTUK FORMAT DD/MM/YYYY HH:mm:ss
-    function parseDDMMYYYYHHMMSS(dateStr) {
-        if (!dateStr) return null;
-        
-        // Contoh: "25/11/2025 11:01:48"
-        const parts = dateStr.trim().split(' '); // [ "25/11/2025", "11:01:48" ]
-        if (parts.length < 2) return null; 
+                    // Cek nama kolom
+                    if (rawData.length > 0) {
+                        const keys = Object.keys(rawData[0]);
+                        if (!keys.includes("WAKTU") || !keys.includes("TRANSAKSI")) {
+                            alert(
+                                "⚠️ Error: Nama kolom di Sheet tidak sesuai! Script mencari: WAKTU, TRANSAKSI, PETUGAS, NOMINAL. \nYang ditemukan: " +
+                                    keys.join(", ")
+                            );
+                        }
+                    }
 
-        const dateParts = parts[0].split('/'); // [ 25, 11, 2025 ]
-        const timeParts = parts[1].split(':'); // [ 11, 01, 48 ]
+                    filterTodayData();
+                    populateTellers();
 
-        if (dateParts.length !== 3 || timeParts.length < 2) return null;
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("dashboardContent").style.display = "block";
 
-        const day = parseInt(dateParts[0]);
-        const month = parseInt(dateParts[1]) - 1; // Bulan di JS (0=Januari)
-        const year = parseInt(dateParts[2]);
-
-        const hour = parseInt(timeParts[0]);
-        const minute = parseInt(timeParts[1]);
-        const second = parseInt(timeParts[2]) || 0;
-
-        const resultDate = new Date(year, month, day, hour, minute, second);
-        
-        return isNaN(resultDate.getTime()) ? null : resultDate;
-    }
-
-    function filterTodayData() {
-    const today = new Date();
-    
-    // Fixed: Add leading zeros and use proper month calculation
-    const todayYear = today.getFullYear();
-    const todayMonth = String(today.getMonth() + 1).padStart(2, '0'); // +1 because getMonth() is 0-based
-    const todayDay = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
-    
-    console.log(`🔎 Memfilter data untuk tanggal hari ini: ${today.toLocaleDateString()}`);
-    console.log(`Format perbandingan: ${todayStr}`);
-
-    todayData = rawData.filter(row => {
-        if (!row.WAKTU) return false;
-        
-        const rowDateObj = parseUniversalDate(row.WAKTU);
-        
-        if (!rowDateObj) {
-            console.warn(`⚠️ Gagal membaca tanggal pada baris:`, row);
-            return false;
+                    applyCalculation();
+                },
+                error: function (err) {
+                    alert("❌ Gagal mengambil data. Cek Link CSV atau Koneksi Internet.");
+                    console.error(err);
+                },
+            });
         }
 
-        // Fixed: Proper month calculation with leading zeros
-        const rowYear = rowDateObj.getFullYear();
-        const rowMonth = String(rowDateObj.getMonth() + 1).padStart(2, '0');
-        const rowDay = String(rowDateObj.getDate()).padStart(2, '0');
-        const rowDateStr = `${rowYear}-${rowMonth}-${rowDay}`;
-        
-        console.log(`Cek: Sheet(${rowDateStr}) vs HariIni(${todayStr}) - Match: ${rowDateStr === todayStr}`);
+        // --- PARSING TANGGAL LEBIH KUAT (UNIVERSAL) ---
+        function parseUniversalDate(dateStr) {
+            if (!dateStr) return null;
 
-        return rowDateStr === todayStr;
-    });
+            // Hapus spasi berlebih
+            dateStr = dateStr.trim();
 
-    console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
-    if(todayData.length === 0) {
-        console.warn("⚠️ Tidak ada data yang cocok dengan tanggal hari ini. Cek apakah tanggal di Google Sheet sudah update?");
-    }
-}
+            // Pisahkan Jam (jika ada)
+            let datePart = dateStr.split(" ")[0];
+            let timePart = dateStr.split(" ")[1] || "00:00:00";
 
+            let day, month, year;
 
-    console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
-    if(todayData.length === 0) {
-        console.warn(`⚠️ Coba ganti filter Shift ke "Semua Jam". Jika tetap 0, data di Sheet mungkin belum hari ini.`);
-    }
-}
-
-        console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
-        if(todayData.length === 0) {
-            console.warn(`⚠️ Coba ganti filter Shift ke "Semua Jam". Jika tetap 0, data di Sheet mungkin belum hari ini.`);
-        }
-    }
-
-    function populateTellers() {
-        const tellers = new Set();
-        todayData.forEach(row => {
-            if(row.PETUGAS) tellers.add(row.PETUGAS.trim());
-        });
-
-        const select = document.getElementById('filterTeller');
-        select.innerHTML = '<option value="All">Semua Petugas</option>';
-        Array.from(tellers).sort().forEach(teller => {
-            const option = document.createElement('option');
-            option.value = teller;
-            option.text = teller;
-            select.appendChild(option);
-        });
-    }
-
-    function applyCalculation() {
-        const modalAwal = parseFloat(document.getElementById('inputModal').value) || 0;
-        const selectedShift = document.getElementById('filterShift').value;
-        const selectedTeller = document.getElementById('filterTeller').value;
-
-        const finalData = todayData.filter(row => {
-            const rowDateObj = parseDDMMYYYYHHMMSS(row.WAKTU);
-            if (!rowDateObj) return false;
-            
-            // 1. Filter Teller
-            if (selectedTeller !== 'All' && row.PETUGAS !== selectedTeller) return false;
-
-            // 2. Filter Shift (Logic Menit)
-            const currentMinutes = (rowDateObj.getHours() * 60) + rowDateObj.getMinutes();
-
-            if (selectedShift === 'Pagi') return currentMinutes >= 360 && currentMinutes <= 720;
-            if (selectedShift === 'Siang') return currentMinutes >= 730 && currentMinutes <= 1080;
-            if (selectedShift === 'Malam') return currentMinutes >= 1140 && currentMinutes <= 1320;
-
-            return true; 
-        });
-
-        updateUI(finalData, modalAwal);
-    }
-
-    function updateUI(data, modal) {
-        let totalMasuk = 0;
-        let totalKeluar = 0;
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-
-        data.slice().reverse().forEach(row => {
-            let cleanNominal = row.NOMINAL.toString().replace(/[^0-9]/g, ""); 
-            let amount = parseFloat(cleanNominal) || 0;
-            
-            const jenis = row.TRANSAKSI.toUpperCase();
-            let isMasuk = false;
-            let labelClass = '';
-
-            if (jenis.includes('TOP UP') || jenis.includes('SETOR')) {
-                totalMasuk += amount;
-                isMasuk = true;
-                labelClass = 'tag-in';
-            } else if (jenis.includes('CASH OUT') || jenis.includes('PENARIKAN') || jenis.includes('TARIK')) {
-                totalKeluar += amount;
-                isMasuk = false;
-                labelClass = 'tag-out';
+            // Cek format: Apakah mengandung "/" (25/11/2025) atau "-" (2025-11-25)
+            if (datePart.includes("/")) {
+                // Asumsi Format Indo/Inggris: DD/MM/YYYY
+                const parts = datePart.split("/");
+                day = parseInt(parts[0]);
+                month = parseInt(parts[1]) - 1; // JS bulan mulai 0
+                year = parseInt(parts[2]);
+            } else if (datePart.includes("-")) {
+                // Asumsi Format ISO: YYYY-MM-DD
+                const parts = datePart.split("-");
+                // Cek mana yang tahun (4 digit)
+                if (parts[0].length === 4) {
+                    year = parseInt(parts[0]);
+                    month = parseInt(parts[1]) - 1;
+                    day = parseInt(parts[2]);
+                } else {
+                    // Kasus langka: DD-MM-YYYY
+                    day = parseInt(parts[0]);
+                    month = parseInt(parts[1]) - 1;
+                    year = parseInt(parts[2]);
+                }
+            } else {
+                return new Date(dateStr); // Serahkan ke JS bawaan
             }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${row.WAKTU.split(' ')[1].substring(0, 5)}</td> <td>${row.PETUGAS}</td>
+            // Ambil Jam Menit Detik
+            const timeParts = timePart.split(":");
+            const hour = parseInt(timeParts[0]) || 0;
+            const minute = parseInt(timeParts[1]) || 0;
+            const second = parseInt(timeParts[2]) || 0;
+
+            const resultDate = new Date(year, month, day, hour, minute, second);
+
+            // Validasi apakah tanggal valid
+            if (isNaN(resultDate.getTime())) return null;
+
+            return resultDate;
+        }
+
+        function filterTodayData() {
+            const today = new Date();
+
+            const todayYear = today.getFullYear();
+            const todayMonth = String(today.getMonth() + 1).padStart(2, "0"); // +1 because getMonth() is 0-based
+            const todayDay = String(today.getDate()).padStart(2, "0");
+            const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
+
+            console.log(`🔎 Memfilter data untuk tanggal hari ini: ${today.toLocaleDateString()}`);
+            console.log(`Format perbandingan: ${todayStr}`);
+
+            todayData = rawData.filter((row) => {
+                if (!row.WAKTU) return false;
+
+                const rowDateObj = parseUniversalDate(row.WAKTU);
+
+                if (!rowDateObj) {
+                    console.warn(`⚠️ Gagal membaca tanggal pada baris:`, row);
+                    return false;
+                }
+
+                const rowYear = rowDateObj.getFullYear();
+                const rowMonth = String(rowDateObj.getMonth() + 1).padStart(2, "0");
+                const rowDay = String(rowDateObj.getDate()).padStart(2, "0");
+                const rowDateStr = `${rowYear}-${rowMonth}-${rowDay}`;
+
+                console.log(`Cek: Sheet(${rowDateStr}) vs HariIni(${todayStr}) - Match: ${rowDateStr === todayStr}`);
+
+                return rowDateStr === todayStr;
+            });
+
+            console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
+            if (todayData.length === 0) {
+                console.warn("⚠️ Tidak ada data yang cocok dengan tanggal hari ini. Cek apakah tanggal di Google Sheet sudah update?");
+            }
+        }
+
+        function populateTellers() {
+            const tellers = new Set();
+            todayData.forEach((row) => {
+                if (row.PETUGAS) tellers.add(row.PETUGAS.trim());
+            });
+
+            const select = document.getElementById("filterTeller");
+            select.innerHTML = '<option value="All">Semua Petugas</option>';
+            Array.from(tellers)
+                .sort()
+                .forEach((teller) => {
+                    const option = document.createElement("option");
+                    option.value = teller;
+                    option.text = teller;
+                    select.appendChild(option);
+                });
+        }
+
+        function applyCalculation() {
+            const modalAwal = parseFloat(document.getElementById("inputModal").value) || 0;
+            const selectedShift = document.getElementById("filterShift").value;
+            const selectedTeller = document.getElementById("filterTeller").value;
+
+            const finalData = todayData.filter((row) => {
+                const rowDateObj = parseUniversalDate(row.WAKTU);
+
+                // 1. Filter Teller
+                if (selectedTeller !== "All" && row.PETUGAS !== selectedTeller) return false;
+
+                // 2. Filter Shift (Logic Menit)
+                const currentMinutes = rowDateObj.getHours() * 60 + rowDateObj.getMinutes();
+
+                if (selectedShift === "Pagi") return currentMinutes >= 360 && currentMinutes <= 720;
+                if (selectedShift === "Siang") return currentMinutes >= 730 && currentMinutes <= 1080;
+                if (selectedShift === "Malam") return currentMinutes >= 1140 && currentMinutes <= 1320;
+
+                return true;
+            });
+
+            updateUI(finalData, modalAwal);
+        }
+
+        function updateUI(data, modal) {
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            data
+                .slice()
+                .reverse()
+                .forEach((row) => {
+                    // Bersihkan nominal dari Rp dan titik
+                    let cleanNominal = row.NOMINAL.toString().replace(/[^0-9]/g, "");
+                    let amount = parseFloat(cleanNominal) || 0;
+
+                    const jenis = row.TRANSAKSI.toUpperCase();
+                    let isMasuk = false;
+                    let labelClass = "";
+
+                    if (jenis.includes("TOP UP") || jenis.includes("SETOR")) {
+                        totalMasuk += amount;
+                        isMasuk = true;
+                        labelClass = "tag-in";
+                    } else if (jenis.includes("CASH OUT") || jenis.includes("PENARIKAN") || jenis.includes("TARIK")) {
+                        totalKeluar += amount;
+                        isMasuk = false;
+                        labelClass = "tag-out";
+                    }
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                <td>${row.WAKTU.split(" ")[1]}</td> 
+                <td>${row.PETUGAS}</td>
                 <td><span class="tag ${labelClass}">${row.TRANSAKSI}</span></td>
-                <td style="font-weight:bold; color: ${isMasuk ? 'var(--success)' : 'var(--danger)'}">
+                <td style="font-weight:bold; color: ${isMasuk ? "var(--success)" : "var(--danger)"}">
                     ${formatRupiah(amount)}
                 </td>
             `;
-            tbody.appendChild(tr);
-        });
+                    tbody.appendChild(tr);
+                });
 
-        const saldoAkhir = modal + totalMasuk - totalKeluar;
+            const saldoAkhir = modal + totalMasuk - totalKeluar;
 
-        document.getElementById('finalBalance').innerText = formatRupiah(saldoAkhir);
-        document.getElementById('totalIn').innerText = formatRupiah(totalMasuk);
-        document.getElementById('totalOut').innerText = formatRupiah(totalKeluar);
-        document.getElementById('totalCount').innerText = data.length + " Trx";
+            document.getElementById("finalBalance").innerText = formatRupiah(saldoAkhir);
+            document.getElementById("totalIn").innerText = formatRupiah(totalMasuk);
+            document.getElementById("totalOut").innerText = formatRupiah(totalKeluar);
+            document.getElementById("totalCount").innerText = data.length + " Trx";
 
-        if(data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada data di shift/filter ini. <br><small>Coba ubah filter Shift ke "Semua Jam" dan Filter Petugas ke "Semua Petugas"</small></td></tr>';
+            if (data.length === 0) {
+                tbody.innerHTML =
+                    '<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada data di shift/filter ini. <br><small>Coba ubah filter Shift menjadi "Semua Jam"</small></td></tr>';
+            }
         }
-    }
 
-    function formatRupiah(angka) {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
-    }
-</script>
-
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(angka);
+        }
+    </script>
 </body>
 </html>
-
-
-
