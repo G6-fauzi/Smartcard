@@ -108,7 +108,6 @@
 
         #loading { text-align: center; margin-top: 50px; color: #64748b; }
     </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
@@ -181,21 +180,23 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
 <script>
     // =================================================================
-    // PASTIKAN LINK INI BENAR
+    // GANTI LINK DI BAWAH INI
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSGyZmd8oN7ZX__52lX-xQVI1u8MXqNpaEbVWtjVBUUc1E9mK4sl-AQ_4jtaf-qxdhrjP-HmW8ao2li/pubhtml'; 
     // =================================================================
 
     let rawData = [];
-    let todayData = []; 
+    let todayData = []; // Variabel khusus menyimpan data HARI INI saja
 
     window.onload = function() {
-        // Tampilkan tanggal hari ini di UI
+        // Tampilkan tanggal hari ini di Header
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('id-ID', options);
         
-        console.log("Memulai proses ambil data...");
         fetchData();
     };
 
@@ -205,116 +206,62 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                console.log("✅ Data berhasil ditarik dari Google Sheet!");
-                console.log("Contoh data baris pertama:", results.data[0]); 
-
                 rawData = results.data;
                 
-                // Cek nama kolom
-                if(rawData.length > 0) {
-                    const keys = Object.keys(rawData[0]);
-                    if(!keys.includes('WAKTU') || !keys.includes('TRANSAKSI')) {
-                        alert("⚠️ Error: Nama kolom di Sheet tidak sesuai! Script mencari: WAKTU, TRANSAKSI, PETUGAS, NOMINAL. \nYang ditemukan: " + keys.join(", "));
-                    }
-                }
-
+                // 1. Langsung filter data agar HANYA mengambil data HARI INI
                 filterTodayData(); 
+                
+                // 2. Isi dropdown petugas berdasarkan data hari ini
                 populateTellers();
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dashboardContent').style.display = 'block';
                 
+                // 3. Jalankan perhitungan
                 applyCalculation();
             },
             error: function(err) {
-                alert("❌ Gagal mengambil data. Cek Link CSV atau Koneksi Internet.");
-                console.error(err);
+                alert("Gagal mengambil data. Cek Link CSV.");
             }
         });
     }
 
-    // --- PARSING TANGGAL LEBIH KUAT (UNIVERSAL) ---
-    function parseUniversalDate(dateStr) {
+    // Fungsi parsing tanggal Indonesia (DD/MM/YYYY HH:mm:ss)
+    function parseIndonesianDate(dateStr) {
         if (!dateStr) return null;
-        
-        // Hapus spasi berlebih
-        dateStr = dateStr.trim();
-        
-        // Pisahkan Jam (jika ada)
-        let datePart = dateStr.split(' ')[0];
-        let timePart = dateStr.split(' ')[1] || "00:00:00";
+        const parts = dateStr.split(' '); // Pisah Tanggal dan Jam
+        if (parts.length < 2) return null;
 
-        let day, month, year;
+        const dateParts = parts[0].includes('/') ? parts[0].split('/') : parts[0].split('-');
+        const timeParts = parts[1].split(':');
 
-        // Cek format: Apakah mengandung "/" (25/11/2025) atau "-" (2025-11-25)
-        if (datePart.includes('/')) {
-            // Asumsi Format Indo/Inggris: DD/MM/YYYY
-            const parts = datePart.split('/');
-            day = parseInt(parts[0]);
-            month = parseInt(parts[1]) - 1; // JS bulan mulai 0
-            year = parseInt(parts[2]);
-        } else if (datePart.includes('-')) {
-            // Asumsi Format ISO: YYYY-MM-DD
-            const parts = datePart.split('-');
-            // Cek mana yang tahun (4 digit)
-            if (parts[0].length === 4) {
-                year = parseInt(parts[0]);
-                month = parseInt(parts[1]) - 1;
-                day = parseInt(parts[2]);
-            } else {
-                // Kasus langka: DD-MM-YYYY
-                day = parseInt(parts[0]);
-                month = parseInt(parts[1]) - 1;
-                year = parseInt(parts[2]);
-            }
-        } else {
-            return new Date(dateStr); // Serahkan ke JS bawaan
-        }
-
-        // Ambil Jam Menit Detik
-        const timeParts = timePart.split(':');
-        const hour = parseInt(timeParts[0]) || 0;
-        const minute = parseInt(timeParts[1]) || 0;
-        const second = parseInt(timeParts[2]) || 0;
-
-        const resultDate = new Date(year, month, day, hour, minute, second);
-        
-        // Validasi apakah tanggal valid
-        if (isNaN(resultDate.getTime())) return null;
-        
-        return resultDate;
+        // Format: new Date(year, monthIndex, day, hours, minutes, seconds)
+        return new Date(
+            dateParts[2],           // Tahun
+            dateParts[1] - 1,       // Bulan (0-11)
+            dateParts[0],           // Tanggal
+            timeParts[0],           // Jam
+            timeParts[1],           // Menit
+            timeParts[2] || 0       // Detik
+        );
     }
 
+    // Filter Awal: Hanya ambil data yang tanggalnya = Hari Ini
     function filterTodayData() {
         const today = new Date();
-        // Reset jam hari ini ke 00:00:00 agar perbandingannya adil (hanya tanggal)
-        const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-        
-        console.log(`🔎 Memfilter data untuk tanggal hari ini: ${today.toLocaleDateString()}`);
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
         todayData = rawData.filter(row => {
             if (!row.WAKTU) return false;
-            
-            const rowDateObj = parseUniversalDate(row.WAKTU);
-            
-            if (!rowDateObj) {
-                console.warn(`⚠️ Gagal membaca tanggal pada baris:`, row);
-                return false;
-            }
+            const rowDateObj = parseIndonesianDate(row.WAKTU);
+            if (!rowDateObj) return false;
 
-            // Buat string tanggal dari data row untuk dibandingkan
-            const rowDateStr = `${rowDateObj.getFullYear()}-${rowDateObj.getMonth()}-${rowDateObj.getDate()}`;
+            // Buat string YYYY-MM-DD dari data
+            const rowDateStr = `${rowDateObj.getFullYear()}-${String(rowDateObj.getMonth()+1).padStart(2,'0')}-${String(rowDateObj.getDate()).padStart(2,'0')}`;
             
-            // LOGGING UNTUK DEBUGGING (Cek console jika data tidak tampil)
-            // console.log(`Cek: Sheet(${rowDateStr}) vs HariIni(${todayStr})`);
-
+            // Bandingkan dengan hari ini
             return rowDateStr === todayStr;
         });
-
-        console.log(`📊 Total data ditemukan untuk hari ini: ${todayData.length} baris.`);
-        if(todayData.length === 0) {
-            console.warn("⚠️ Tidak ada data yang cocok dengan tanggal hari ini. Cek apakah tanggal di Google Sheet sudah update?");
-        }
     }
 
     function populateTellers() {
@@ -333,25 +280,38 @@
         });
     }
 
+    // Fungsi Utama: Filter Shift, Teller, dan Hitung Saldo
     function applyCalculation() {
         const modalAwal = parseFloat(document.getElementById('inputModal').value) || 0;
         const selectedShift = document.getElementById('filterShift').value;
         const selectedTeller = document.getElementById('filterTeller').value;
 
+        // Filter Data (Shift & Teller)
         const finalData = todayData.filter(row => {
-            const rowDateObj = parseUniversalDate(row.WAKTU);
-            
-            // 1. Filter Teller
+            const rowDateObj = parseIndonesianDate(row.WAKTU);
+            if (!rowDateObj) return false;
+
+            // 1. Cek Filter Teller
             if (selectedTeller !== 'All' && row.PETUGAS !== selectedTeller) return false;
 
-            // 2. Filter Shift (Logic Menit)
+            // 2. Cek Filter Shift (Logic Menit)
+            // Konversi waktu ke total menit dari jam 00:00
             const currentMinutes = (rowDateObj.getHours() * 60) + rowDateObj.getMinutes();
 
-            if (selectedShift === 'Pagi') return currentMinutes >= 360 && currentMinutes <= 720;
-            if (selectedShift === 'Siang') return currentMinutes >= 730 && currentMinutes <= 1080;
-            if (selectedShift === 'Malam') return currentMinutes >= 1140 && currentMinutes <= 1320;
+            if (selectedShift === 'Pagi') {
+                // 06:00 (360) - 12:00 (720)
+                return currentMinutes >= 360 && currentMinutes <= 720;
+            } 
+            else if (selectedShift === 'Siang') {
+                // 12:10 (730) - 18:00 (1080)
+                return currentMinutes >= 730 && currentMinutes <= 1080;
+            } 
+            else if (selectedShift === 'Malam') {
+                // 19:00 (1140) - 22:00 (1320)
+                return currentMinutes >= 1140 && currentMinutes <= 1320;
+            }
 
-            return true; 
+            return true; // Jika Shift 'All', lolos
         });
 
         updateUI(finalData, modalAwal);
@@ -360,18 +320,21 @@
     function updateUI(data, modal) {
         let totalMasuk = 0;
         let totalKeluar = 0;
+
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
         data.slice().reverse().forEach(row => {
-            // Bersihkan nominal dari Rp dan titik
-            let cleanNominal = row.NOMINAL.toString().replace(/[^0-9]/g, ""); 
+            // Bersihkan nominal
+            let cleanNominal = row.NOMINAL.toString().replace(/[^0-9]/g, "");
             let amount = parseFloat(cleanNominal) || 0;
             
+            // Tentukan Tipe Transaksi (Masuk/Keluar) berdasarkan kolom 'TRANSAKSI'
             const jenis = row.TRANSAKSI.toUpperCase();
             let isMasuk = false;
             let labelClass = '';
 
+            // LOGIKA PENJUMLAHAN DAN PENGURANGAN
             if (jenis.includes('TOP UP') || jenis.includes('SETOR')) {
                 totalMasuk += amount;
                 isMasuk = true;
@@ -382,10 +345,10 @@
                 labelClass = 'tag-out';
             }
 
+            // Render Tabel
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${row.WAKTU.split(' ')[1]}</td> 
-                <td>${row.PETUGAS}</td>
+                <td>${row.WAKTU.split(' ')[1]}</td> <td>${row.PETUGAS}</td>
                 <td><span class="tag ${labelClass}">${row.TRANSAKSI}</span></td>
                 <td style="font-weight:bold; color: ${isMasuk ? 'var(--success)' : 'var(--danger)'}">
                     ${formatRupiah(amount)}
@@ -394,15 +357,18 @@
             tbody.appendChild(tr);
         });
 
+        // HITUNG TOTAL AKHIR
+        // Rumus: Modal + (Masuk - Keluar)
         const saldoAkhir = modal + totalMasuk - totalKeluar;
 
+        // Update Kartu Statistik
         document.getElementById('finalBalance').innerText = formatRupiah(saldoAkhir);
         document.getElementById('totalIn').innerText = formatRupiah(totalMasuk);
         document.getElementById('totalOut').innerText = formatRupiah(totalKeluar);
         document.getElementById('totalCount').innerText = data.length + " Trx";
 
         if(data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada data di shift/filter ini. <br><small>Coba ubah filter Shift menjadi "Semua Jam"</small></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada data di shift/filter ini.</td></tr>';
         }
     }
 
@@ -410,9 +376,6 @@
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
     }
 </script>
+
 </body>
-
 </html>
-
-
-
